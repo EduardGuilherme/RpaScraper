@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+
+  # ── RPA Worker ──────────────────────────────────────────────────────────────
+  rpa-worker:
+    build:
+      context: .
+      dockerfile: src/Rpa.Worker/Dockerfile
+    container_name: rpa-worker
+    restart: unless-stopped
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+      - Worker__IntervalMinutes=15
+    networks:
+      - rpa-net
+    depends_on: []
+
+  # ── Web API ─────────────────────────────────────────────────────────────────
+  rpa-api:
+    build:
+      context: .
+      dockerfile: src/Rpa.Api/Dockerfile
+    container_name: rpa-api
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    networks:
+      - rpa-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  rpa-net:
+    driver: bridge
